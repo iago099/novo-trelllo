@@ -1,4 +1,4 @@
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzwsUbrhtjUczeAUGblxNZkTt7fXsjyfIu2tHIfBjyNZG0hF2QAWohqS5QNPQ4VK7I/exec/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzwsUbrhtjUczeAUGblxNZkTt7fXsjyfIu2tHIfBjyNZG0hF2QAWohqS5QNPQ4VK7I/exec";
 
 let selectedFile = { base64: null, name: "", type: "", fileType: "", url: null, downloadUrl: null };
 let currentEditingId = null;
