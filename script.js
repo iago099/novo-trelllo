@@ -1,4 +1,9 @@
+// ── URL DO APPS SCRIPT ───────────────────────────────────────────────────────
+// Usamos corsproxy.io para contornar o bloqueio de CORS no GitHub Pages
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzwsUbrhtjUczeAUGblxNZkTt7fXsjyfIu2tHIfBjyNZG0hF2QAWohqS5QNPQ4VK7I/exec";
+const _px  = (u) => "https://corsproxy.io/?" + encodeURIComponent(u);
+const GURL = () => _px(SCRIPT_URL);
+const PURL = () => _px(SCRIPT_URL);
 
 let selectedFile = { base64: null, name: "", type: "", fileType: "", url: null, downloadUrl: null };
 let currentEditingId = null;
@@ -51,7 +56,7 @@ const IMG_SVG      = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
 async function loadTasks() {
     updateStatus("Sincronizando banco de dados...");
     try {
-        const res = await fetch(SCRIPT_URL, { redirect: 'follow' });
+        const res = await fetch(GURL(), { redirect: 'follow' });
         const tasks = await res.json();
         document.querySelectorAll('.task-list').forEach(l => l.innerHTML = '');
         tasks.forEach(t => renderCard(
@@ -82,7 +87,7 @@ async function uploadComChunks(base64, name, type) {
 
         updateStatus(`Enviando ${pct}%… (parte ${i + 1}/${total})`);
 
-        const res = await fetch(SCRIPT_URL, {
+        const res = await fetch(PURL(), {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
             redirect: 'follow',
@@ -131,7 +136,7 @@ async function createNewTask() {
         }
     }
 
-    const saveRes  = await fetch(SCRIPT_URL, {
+    const saveRes  = await fetch(PURL(), {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
             redirect: 'follow',
@@ -265,7 +270,7 @@ async function deleteTask(id) {
     }
 
     try {
-        const res = await fetch(SCRIPT_URL, {
+        const res = await fetch(PURL(), {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
             redirect: 'follow',
@@ -394,7 +399,7 @@ async function drop(e) {
     if (col) {
         col.querySelector('.task-list').appendChild(card);
         updateStatus("Movendo diretiva...");
-        await fetch(SCRIPT_URL, {
+        await fetch(PURL(), {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
             redirect: 'follow',
@@ -435,7 +440,7 @@ async function loadLibrary() {
     container.innerHTML = '<p style="color:rgba(255,255,255,0.4);font-size:0.8rem;padding:20px">Carregando...</p>';
 
     try {
-        const res   = await fetch(SCRIPT_URL + "?action=listFiles", { redirect: 'follow' });
+        const res   = await fetch(_px(SCRIPT_URL + "?action=listFiles"), { redirect: 'follow' });
         const files = await res.json();
 
         if (!files.length) {
