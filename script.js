@@ -1,12 +1,13 @@
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwHcimLHg_4OyjDh0K_xt5wLlhbxYJCFIodWhI7oioxr2IordnzWkG0HpOzyXjXWNv5/exec"; 
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbySFayMOBpulPQXjbu1dnK5TsLDtsoEuJuZVPj-GXLN-lFD2O6DvKTVckGjqkEe11kD/exec"; 
 
 let selectedFile = { base64: null, name: "", type: "" };
 let currentEditingId = null;
 
 function updateStatus(msg) { document.getElementById('statusMsg').innerText = "STATUS: > " + msg; }
 
+// CARREGA DO GOOGLE E MOSTRA NO FRONT
 async function loadTasks() {
-    updateStatus("Sincronizando diretivas...");
+    updateStatus("Sincronizando...");
     try {
         const res = await fetch(SCRIPT_URL);
         const tasks = await res.json();
@@ -16,6 +17,7 @@ async function loadTasks() {
     } catch (e) { updateStatus("ERRO DE CONEXÃO ❌"); }
 }
 
+// CRIA NOVA TAREFA (FRONT-END DOMINANTE)
 async function createNewTask() {
     const editor = document.getElementById('editor');
     const text = editor.innerHTML.trim();
@@ -26,24 +28,21 @@ async function createNewTask() {
     let fileUrl = "";
     let fileType = "";
 
-    // 1. Upload do Arquivo se existir
+    // Se tiver arquivo, sobe primeiro
     if (selectedFile.base64) {
-        updateStatus("Fazendo upload para o Drive...");
+        updateStatus("Fazendo upload...");
         const upRes = await fetch(SCRIPT_URL, {
             method: 'POST',
             body: JSON.stringify({ action: "uploadFile", name: selectedFile.name, type: selectedFile.type, base64: selectedFile.base64 })
         });
         const upData = await upRes.json();
-        if (upData.status === "error") { 
-            alert("Erro de permissão no Drive. Execute a função AUTORIZAR no Script."); 
-            return; 
-        }
+        if (upData.status === "error") { alert("Acesso Negado no Drive! Autorize o script."); return; }
         fileUrl = upData.url;
         fileType = selectedFile.type.includes("image") ? "image" : "document";
     }
 
-    // 2. Salva na Planilha
-    updateStatus("Salvando na planilha...");
+    // Salva na planilha e mostra no Front
+    updateStatus("Salvando...");
     const saveRes = await fetch(SCRIPT_URL, {
         method: 'POST',
         body: JSON.stringify({ action: "saveTask", text, status: 'todo', fileUrl, fileName: selectedFile.name, fileType, id })
@@ -53,11 +52,11 @@ async function createNewTask() {
     if (saveData.status === "success") {
         renderCard(id, text, 'todo', fileUrl, selectedFile.name, fileType);
         resetInputs();
-        updateStatus("MENSAGEM REGISTRADA ✅");
+        updateStatus("CONCLUÍDO ✅");
     }
 }
 
-// FUNÇÃO DO BALÃO ÚNICO (ESTRUTURA INSEPARÁVEL)
+// RENDERIZAÇÃO DO BALÃO ÚNICO (TEXTO + MÍDIA)
 function renderCard(id, text, status, url, name, type) {
     const existing = document.getElementById(id);
     if(existing) existing.remove();
@@ -68,31 +67,31 @@ function renderCard(id, text, status, url, name, type) {
 
     let mediaHtml = "";
     if (url) {
-        mediaHtml = `<div class="media-container" style="margin-top:10px; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.1); background:#000;">`;
+        mediaHtml = `<div class="media-container" style="margin-top:12px; border-radius:10px; overflow:hidden; border:1px solid rgba(255,255,255,0.1); background:#000;">`;
         if (type === "image" || name.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
             const thumb = url.replace('file/d/', 'uc?id=').replace('/view?usp=sharing', '');
-            mediaHtml += `<img src="${thumb}" style="width:100%; display:block; max-height:220px; object-fit:cover;" onclick="window.open('${url}')">`;
+            mediaHtml += `<img src="${thumb}" style="width:100%; display:block; max-height:200px; object-fit:cover;" onclick="window.open('${url}')">`;
         }
         mediaHtml += `
-            <a href="${url}" target="_blank" style="display:flex; align-items:center; justify-content:space-between; padding:12px; background:rgba(59, 130, 246, 0.2); color:#3b82f6; text-decoration:none; font-weight:bold; font-size:0.85rem;">
+            <a href="${url}" target="_blank" style="display:flex; align-items:center; justify-content:space-between; padding:12px; background:rgba(59, 130, 246, 0.2); color:#3b82f6; text-decoration:none; font-weight:bold; font-size:0.8rem;">
                 <span>📎 ${name.substring(0,12)}...</span>
-                <span style="background:#3b82f6; color:#fff; padding:2px 8px; border-radius:4px;">BAIXAR</span>
+                <span style="background:#3b82f6; color:#fff; padding:2px 8px; border-radius:4px;">VER</span>
             </a>
         </div>`;
     }
 
     card.innerHTML = `
-        <div class="card-actions" style="position:absolute; top:10px; right:10px; display:flex; gap:5px;">
-            <button onclick="deleteTask('${id}')" style="background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.1); color:#fff; cursor:pointer; padding:5px; border-radius:5px;">✖</button>
+        <div class="card-actions" style="position:absolute; top:8px; right:8px;">
+            <button onclick="deleteTask('${id}')" style="background:rgba(0,0,0,0.5); border:none; color:red; cursor:pointer; padding:5px; border-radius:5px;">✖</button>
         </div>
-        <div class="card-text" style="color:#eee; line-height:1.5;">${text}</div>
+        <div class="card-text" style="color:#eee; font-size:0.95rem;">${text}</div>
         ${mediaHtml}
     `;
     
-    const list = document.getElementById(`${status}-list`);
-    if(list) list.appendChild(card);
+    document.getElementById(`${status}-list`).appendChild(card);
 }
 
+// SELEÇÃO DE ARQUIVO NO FRONT
 function handleFileSelection(i) {
     const f = i.files[0];
     if (!f) return;
@@ -104,9 +103,10 @@ function handleFileSelection(i) {
     r.readAsDataURL(f);
 }
 
+// EXCLUSÃO SINCRONIZADA
 async function deleteTask(id) {
-    if(!confirm("Deseja apagar esta missão permanentemente?")) return;
-    updateStatus("Deletando da nuvem...");
+    if(!confirm("Excluir definitivamente?")) return;
+    updateStatus("Apagando...");
     const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "deleteTask", id: id }) });
     const r = await res.json();
     if(r.status === "success") {
