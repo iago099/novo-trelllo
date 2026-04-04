@@ -1,4 +1,4 @@
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwM1Fw8DUShYNUAAhhL6OCFPm-MhVjOHa3gCNuaTHJ8i-rBjFct851WxbYLZceRHz65/exec"; 
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwHcimLHg_4OyjDh0K_xt5wLlhbxYJCFIodWhI7oioxr2IordnzWkG0HpOzyXjXWNv5/exec"; 
 
 let selectedFile = { base64: null, name: "", type: "" };
 let currentEditingId = null;
@@ -6,7 +6,7 @@ let currentEditingId = null;
 function updateStatus(msg) { document.getElementById('statusMsg').innerText = "STATUS: > " + msg; }
 
 async function loadTasks() {
-    updateStatus("Sincronizando...");
+    updateStatus("Sincronizando diretivas...");
     try {
         const res = await fetch(SCRIPT_URL);
         const tasks = await res.json();
@@ -26,15 +26,18 @@ async function createNewTask() {
     let fileUrl = "";
     let fileType = "";
 
-    // 1. Envia o arquivo se houver
+    // 1. Upload do Arquivo se existir
     if (selectedFile.base64) {
-        updateStatus("Subindo arquivo ao Drive...");
+        updateStatus("Fazendo upload para o Drive...");
         const upRes = await fetch(SCRIPT_URL, {
             method: 'POST',
             body: JSON.stringify({ action: "uploadFile", name: selectedFile.name, type: selectedFile.type, base64: selectedFile.base64 })
         });
         const upData = await upRes.json();
-        if (upData.status === "error") { alert("Erro no Drive: " + upData.message); return; }
+        if (upData.status === "error") { 
+            alert("Erro de permissão no Drive. Execute a função AUTORIZAR no Script."); 
+            return; 
+        }
         fileUrl = upData.url;
         fileType = selectedFile.type.includes("image") ? "image" : "document";
     }
@@ -50,11 +53,11 @@ async function createNewTask() {
     if (saveData.status === "success") {
         renderCard(id, text, 'todo', fileUrl, selectedFile.name, fileType);
         resetInputs();
-        updateStatus("CONCLUÍDO ✅");
+        updateStatus("MENSAGEM REGISTRADA ✅");
     }
 }
 
-// FUNÇÃO DO BALÃO ÚNICO (TEXTO + FOTO + DOWNLOAD JUNTOS)
+// FUNÇÃO DO BALÃO ÚNICO (ESTRUTURA INSEPARÁVEL)
 function renderCard(id, text, status, url, name, type) {
     const existing = document.getElementById(id);
     if(existing) existing.remove();
@@ -65,10 +68,10 @@ function renderCard(id, text, status, url, name, type) {
 
     let mediaHtml = "";
     if (url) {
-        mediaHtml = `<div class="media-container" style="margin-top:10px; border-radius:10px; overflow:hidden; border:1px solid rgba(255,255,255,0.1); background:#000;">`;
+        mediaHtml = `<div class="media-container" style="margin-top:10px; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.1); background:#000;">`;
         if (type === "image" || name.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
             const thumb = url.replace('file/d/', 'uc?id=').replace('/view?usp=sharing', '');
-            mediaHtml += `<img src="${thumb}" style="width:100%; display:block; max-height:250px; object-fit:cover;" onclick="window.open('${url}')">`;
+            mediaHtml += `<img src="${thumb}" style="width:100%; display:block; max-height:220px; object-fit:cover;" onclick="window.open('${url}')">`;
         }
         mediaHtml += `
             <a href="${url}" target="_blank" style="display:flex; align-items:center; justify-content:space-between; padding:12px; background:rgba(59, 130, 246, 0.2); color:#3b82f6; text-decoration:none; font-weight:bold; font-size:0.85rem;">
@@ -102,8 +105,8 @@ function handleFileSelection(i) {
 }
 
 async function deleteTask(id) {
-    if(!confirm("Excluir missão?")) return;
-    updateStatus("Apagando da planilha...");
+    if(!confirm("Deseja apagar esta missão permanentemente?")) return;
+    updateStatus("Deletando da nuvem...");
     const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "deleteTask", id: id }) });
     const r = await res.json();
     if(r.status === "success") {
