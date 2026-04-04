@@ -1,0 +1,485 @@
+/* ── RESET & BASE ──────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --p: #a855f7;
+  --b: #3b82f6;
+  --g: #22c55e;
+  --p-glow: rgba(168, 85, 247, 0.35);
+  --b-glow: rgba(59, 130, 246, 0.35);
+  --card-bg: rgba(255, 255, 255, 0.035);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.09);
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #020205;
+  color: #fff;
+  min-height: 100vh;
+  background-image: radial-gradient(ellipse 90% 55% at 50% -5%, #14123a 0%, #020205 70%);
+  overflow-x: hidden;
+}
+
+/* ── GRID DE FUNDO ─────────────────────────────────────────────────────────── */
+.background-grid {
+  position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* ── GLASS ─────────────────────────────────────────────────────────────────── */
+.glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* ── HEADER ────────────────────────────────────────────────────────────────── */
+header {
+  padding: 36px 20px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.logo-text {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: 10px;
+  background: linear-gradient(90deg, var(--p), var(--b));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── EDITOR PRINCIPAL ──────────────────────────────────────────────────────── */
+.main-editor {
+  width: 100%;
+  max-width: 640px;
+  border-radius: 16px;
+  overflow: hidden;                      /* toolbar fica DENTRO do card */
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(168,85,247,0.07);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── TOOLBAR ───────────────────────────────────────────────────────────────── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 14px;
+  background: rgba(0,0,0,0.3);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;                        /* não encolhe */
+}
+
+.toolbar button,
+.toolbar .tool-btn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.65);
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+}
+
+.toolbar button:hover,
+.toolbar .tool-btn:hover {
+  background: rgba(168,85,247,0.15);
+  border-color: rgba(168,85,247,0.4);
+  color: var(--p);
+}
+
+.toolbar .material-icons-round { font-size: 18px; }
+
+.toolbar .divider {
+  width: 1px;
+  height: 22px;
+  background: rgba(255,255,255,0.1);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+/* ── ÁREA DE TEXTO ─────────────────────────────────────────────────────────── */
+#editor {
+  min-height: 110px;
+  padding: 18px 20px;
+  outline: none;
+  background: rgba(0,0,0,0.15);
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: rgba(255,255,255,0.85);
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+#editor:empty::before {
+  content: attr(data-placeholder);
+  color: rgba(255,255,255,0.22);
+  pointer-events: none;
+}
+
+/* ── FOOTER DO EDITOR ──────────────────────────────────────────────────────── */
+.editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(0,0,0,0.35);
+  border-top: 1px solid rgba(255,255,255,0.05);
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+#fileNameDisplay {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.38);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+  flex-shrink: 1;
+}
+
+.btn-send {
+  background: linear-gradient(135deg, var(--p), #7c3aed);
+  border: none;
+  color: #fff;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 0.82rem;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 0 20px var(--p-glow);
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.btn-send:hover {
+  box-shadow: 0 0 32px rgba(168,85,247,0.6);
+  transform: translateY(-1px);
+}
+
+/* ── STATUS ────────────────────────────────────────────────────────────────── */
+#statusMsg {
+  font-size: 0.72rem;
+  letter-spacing: 2px;
+  color: rgba(255,255,255,0.35);
+  font-family: 'Courier New', monospace;
+}
+
+/* ── KANBAN ────────────────────────────────────────────────────────────────── */
+.kanban-board {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  padding: 10px 20px 40px;
+  flex-wrap: wrap;
+}
+
+.column {
+  width: 340px;
+  min-height: 60vh;
+  padding: 14px;
+  border-radius: 14px;
+}
+
+.column h3 {
+  font-size: 0.68rem;
+  letter-spacing: 3.5px;
+  text-align: center;
+  margin-bottom: 18px;
+  font-weight: 800;
+}
+
+.purple-neon { color: var(--p); text-shadow: 0 0 10px var(--p-glow); }
+.blue-neon   { color: var(--b); text-shadow: 0 0 10px var(--b-glow); }
+.green-neon  { color: var(--g); text-shadow: 0 0 10px rgba(34,197,94,0.4); }
+
+.task-list { display: flex; flex-direction: column; }
+
+/* ── CARD ──────────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-left: 4px solid transparent;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 14px;
+  position: relative;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  /* animação de ENTRADA */
+  animation: cardIn 0.35s ease forwards;
+  /* transition só para hover — NÃO inclui opacity/transform para não brigar com delete */
+  transition: background 0.25s, box-shadow 0.25s;
+  will-change: transform, opacity;
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Hover — usa classe separada para poder remover durante delete */
+.card.hoverable:hover {
+  background: rgba(255,255,255,0.06);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.5);
+  transform: translateY(-3px);
+}
+
+/* Cores de borda por coluna */
+#todo  .card { border-left-color: var(--p); }
+#doing .card { border-left-color: var(--b); }
+#done  .card { border-left-color: var(--g); }
+
+/* Animação de SAÍDA (adicionada via JS) */
+.card.removing {
+  /* desliga hover para não travar a animação */
+  pointer-events: none;
+  transition:
+    opacity 0.28s ease,
+    transform 0.28s ease,
+    max-height 0.32s ease 0.05s,
+    margin-bottom 0.32s ease 0.05s,
+    padding-top 0.32s ease 0.05s,
+    padding-bottom 0.32s ease 0.05s !important;
+  opacity: 0 !important;
+  transform: scale(0.86) translateY(-6px) !important;
+  max-height: 0 !important;
+  margin-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  overflow: hidden;
+}
+
+/* ── AÇÕES DO CARD ─────────────────────────────────────────────────────────── */
+.card-actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.18s;
+}
+
+.card:hover .card-actions { opacity: 1; }
+
+.action-btn {
+  background: rgba(0,0,0,0.55);
+  border: 1px solid rgba(255,255,255,0.1);
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.18s;
+  color: rgba(255,255,255,0.7);
+  flex-shrink: 0;
+}
+
+.action-btn:hover { background: rgba(255,255,255,0.12); }
+
+/* ── TEXTO DO CARD ─────────────────────────────────────────────────────────── */
+.card-text {
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: rgba(255,255,255,0.82);
+  padding-right: 48px;      /* espaço para os botões de ação */
+  margin-bottom: 0;
+}
+
+.card-text:not(:last-child) { margin-bottom: 12px; }
+
+/* ── MÍDIA DO CARD ─────────────────────────────────────────────────────────── */
+.card-media-box {
+  margin-top: 12px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.4);
+}
+
+/* Imagem */
+.card-img {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  display: block;
+  cursor: zoom-in;
+}
+
+/* Rodapé da imagem */
+.card-img-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.45);
+  border-top: 1px solid rgba(255,255,255,0.06);
+  gap: 8px;
+}
+
+.card-img-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.35);
+  font-family: 'Courier New', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* Linha de arquivo genérico */
+.card-file-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+}
+
+.card-file-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.card-file-icon.pdf        { background: rgba(239,68,68,0.15); }
+.card-file-icon.docx       { background: rgba(59,130,246,0.15); }
+.card-file-icon.xlsx       { background: rgba(34,197,94,0.12); }
+.card-file-icon.other      { background: rgba(255,255,255,0.07); }
+
+.card-file-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-file-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-file-type {
+  font-size: 0.67rem;
+  color: rgba(255,255,255,0.32);
+  font-family: 'Courier New', monospace;
+  margin-top: 2px;
+}
+
+/* ── BOTÃO BAIXAR ──────────────────────────────────────────────────────────── */
+.card-download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  background: rgba(59,130,246,0.12);
+  color: #60a5fa;
+  border: 1px solid rgba(59,130,246,0.28);
+  border-radius: 7px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.card-download-btn:hover {
+  background: rgba(59,130,246,0.3);
+  border-color: var(--b);
+  color: #fff;
+}
+
+/* ── MODAL BIBLIOTECA ──────────────────────────────────────────────────────── */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal.open { display: flex; }
+
+.modal-content {
+  width: 90%;
+  max-width: 560px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.8);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: rgba(0,0,0,0.4);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.modal-header h3 {
+  font-size: 0.78rem;
+  letter-spacing: 3px;
+  color: var(--p);
+  font-weight: 800;
+}
+
+.modal-header .close {
+  font-size: 1.4rem;
+  color: rgba(255,255,255,0.4);
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.modal-header .close:hover { color: #fff; }
+
+.file-grid {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+/* ── SCROLLBAR ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(168,85,247,0.35); border-radius: 10px; }
