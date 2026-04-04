@@ -1,4 +1,4 @@
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxDvXkCZ22k4KGOj09YWOC5lQH42GF31lvdFed14bb86W0R75WGoNcT-tfxVzHr_jbP/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz6NTujJmMjet3uxNQtxaoPFDlMZ6H5_xAFc1VOQ_I2kEa9d1ZqyaoVxduwx9NT4MZp/exec";
 
 let selectedFile = { base64: null, name: "", type: "", fileType: "", url: null, downloadUrl: null };
 let currentEditingId = null;
@@ -407,3 +407,67 @@ async function drop(e) {
         updateStatus("MOVIDO ✅");
     }
 }
+
+// ── TOOLBAR DO EDITOR ─────────────────────────────────────────────────────────
+
+function execCmd(cmd, value) {
+    document.getElementById('editor').focus();
+    document.execCommand(cmd, false, value || null);
+}
+
+// ── BIBLIOTECA DO DRIVE ───────────────────────────────────────────────────────
+
+function openLibrary() {
+    document.getElementById('libraryModal').classList.add('open');
+    loadLibrary();
+}
+
+function closeLibrary() {
+    document.getElementById('libraryModal').classList.remove('open');
+}
+
+async function loadLibrary() {
+    const container = document.getElementById('fileListContainer');
+    container.innerHTML = '<p style="color:rgba(255,255,255,0.4);font-size:0.8rem;padding:20px">Carregando...</p>';
+
+    try {
+        const res   = await fetch(SCRIPT_URL + "?action=listFiles");
+        const files = await res.json();
+
+        if (!files.length) {
+            container.innerHTML = '<p style="color:rgba(255,255,255,0.4);font-size:0.8rem;padding:20px">Nenhum arquivo na biblioteca.</p>';
+            return;
+        }
+
+        container.innerHTML = "";
+        files.forEach(f => {
+            const isImg = f.fileType === "image";
+            const card  = document.createElement('div');
+            card.style.cssText = "background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;cursor:pointer;transition:background 0.2s;";
+            card.innerHTML = `
+                <div style="font-size:0.78rem;font-weight:600;color:rgba(255,255,255,0.8);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${f.name}</div>
+                <div style="font-size:0.65rem;color:rgba(255,255,255,0.35);font-family:monospace;">${(f.fileType || "outro").toUpperCase()}</div>
+            `;
+            card.onmouseenter = () => card.style.background = "rgba(168,85,247,0.12)";
+            card.onmouseleave = () => card.style.background = "rgba(255,255,255,0.04)";
+            card.onclick = () => {
+                selectedFile = {
+                    base64: null, name: f.name, type: "",
+                    fileType: f.fileType, url: f.url, downloadUrl: f.downloadUrl
+                };
+                updateFileDisplay(f.name);
+                updateStatus("Arquivo da biblioteca selecionado ✅");
+                closeLibrary();
+            };
+            container.appendChild(card);
+        });
+    } catch(e) {
+        container.innerHTML = '<p style="color:#ef4444;font-size:0.8rem;padding:20px">Erro ao carregar biblioteca.</p>';
+    }
+}
+
+// Fecha modal clicando fora
+document.addEventListener('click', (e) => {
+    const modal = document.getElementById('libraryModal');
+    if (modal && e.target === modal) closeLibrary();
+});
