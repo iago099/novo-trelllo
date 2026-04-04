@@ -1,4 +1,4 @@
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzKbxJ0yV0CoX8e3nS9ex7SfeVVxueGbDkeA3ugQqdQ6dGjZFOJ5vE3xAyRN32xflH1/exec"; 
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyM4Z_zGWGbRH1Cd1dsmILKEri6E_A5pKvivTQDTZy1U98jyLsENzDZ4nGtk2QO5DuV/exec"; 
 
 let selectedFile = { base64: null, name: "", type: "" };
 
