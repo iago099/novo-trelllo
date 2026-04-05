@@ -1,100 +1,84 @@
-/**
- * NEXUS CONTROL FRONTEND - V11.7
- */
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzwsUbrhtjUczeAUGblxNZkTt7fXsjyfIu2tHIfBjyNZG0hF2QAWohqS5QNPQ4VK7I/exec";
-
-// Proxy obrigatório para LEITURA (GET) no GitHub Pages
-const _px = (u) => "https://corsproxy.io/?" + encodeURIComponent(u);
+// ATENÇÃO: Substitua pelo IP EXTERNO que aparece no painel do Google Cloud
+const API_URL = "34.168.251.50"; 
 
 function updateStatus(msg) {
-    const el = document.getElementById('statusMsg');
-    if(el) el.innerText = "STATUS: > " + msg;
+    document.getElementById('statusMsg').innerText = "STATUS: > " + msg;
 }
 
-// ── CARREGAR TAREFAS (CORRIGIDO) ─────────────────────────────────────────────
+// ── CARREGAR TAREFAS ──
 async function loadTasks() {
-    updateStatus("Sincronizando...");
+    updateStatus("Sincronizando VM...");
     try {
-        // Usamos o Proxy para evitar erro de CORS no GET
-        const res = await fetch(_px(SCRIPT_URL), { redirect: 'follow' });
-        if (!res.ok) throw new Error("Erro na rede");
-        
+        const res = await fetch(`${API_URL}/tasks`);
         const tasks = await res.json();
+        ['todo-list', 'doing-list', 'done-list'].forEach(id => document.getElementById(id).innerHTML = '');
         
-        // Limpa as listas
-        ['todo-list', 'doing-list', 'done-list'].forEach(id => {
-            const el = document.getElementById(id);
-            if(el) el.innerHTML = '';
+        tasks.forEach(t => {
+            renderCard(t.id, t.text, t.status, t.fileUrl, t.fileName, t.fileType);
         });
-
-        tasks.forEach(t => renderCard(t.id, t.text, t.status, t.fileUrl, t.fileName, t.fileType));
         updateStatus("SISTEMA ONLINE ✅");
     } catch (e) {
-        updateStatus("ERRO DE CONEXÃO ❌ - Verifique o Script");
-        console.error("Erro ao carregar:", e);
+        updateStatus("FALHA NA VM ❌");
     }
 }
 
-// ── UPLOAD (ESTABILIZADO) ────────────────────────────────────────────────────
-async function uploadComChunks(base64, name, type, taskId) {
-    const CHUNK = 1024 * 1024; // 1MB
-    const total = Math.ceil(base64.length / CHUNK);
-    const uid = "up-" + Date.now();
-
-    for (let i = 0; i < total; i++) {
-        const chunk = base64.slice(i * CHUNK, (i + 1) * CHUNK);
-        const isLast = i === total - 1;
-        updateStatus(`Upload: ${Math.round(((i+1)/total)*100)}%`);
-
-        // No POST de upload, enviamos DIRETO sem proxy
-        await fetch(SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors', 
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({
-                action: "uploadChunk",
-                uploadId: uid,
-                id: taskId,
-                name, type, chunk,
-                index: i, total, isLast
-            })
-        });
-        
-        if (isLast) {
-            updateStatus("Finalizando arquivo...");
-            setTimeout(() => location.reload(), 3500);
-        }
-    }
-}
-
-// ── SALVAR TAREFA ────────────────────────────────────────────────────────────
+// ── REGISTRAR MISSÃO ──
 async function createNewTask() {
     const editor = document.getElementById('editor');
-    const text = editor.innerText.trim();
-    const id = currentEditingId || "card-" + Date.now();
+    const fileInput = document.getElementById('fileInput');
+    const text = editor.innerHTML.trim();
+    
+    if (!text && !fileInput.files[0]) return;
 
-    if (!text && !selectedFile.base64) return;
+    updateStatus("Enviando para Python...");
+    const formData = new FormData();
+    formData.append('id', "card-" + Date.now());
+    formData.append('text', text);
+    formData.append('status', 'todo');
+    if (fileInput.files[0]) formData.append('file', fileInput.files[0]);
 
     try {
-        if (selectedFile.base64) {
-            await uploadComChunks(selectedFile.base64, selectedFile.name, selectedFile.type, id);
-            return;
-        }
-
-        updateStatus("Salvando...");
-        await fetch(SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: JSON.stringify({ action: "saveTask", id, text, status: "todo" })
-        });
-
-        updateStatus("Salvo com sucesso ✅");
-        setTimeout(loadTasks, 1000);
-        resetInputs();
+        await fetch(`${API_URL}/save-task`, { method: 'POST', body: formData });
+        updateStatus("MISSÃO GRAVADA ✅");
+        editor.innerHTML = "";
+        fileInput.value = "";
+        document.getElementById('fileNameDisplay').innerText = "Sem anexo";
+        loadTasks();
     } catch (e) {
-        updateStatus("ERRO AO SALVAR ❌");
+        updateStatus("ERRO NO BACKEND ❌");
     }
 }
 
-// Inicializa o sistema
-window.onload = loadTasks;
+// ── RENDERIZAR CARD (Mantendo seu estilo CSS) ──
+function renderCard(id, text, status, url, name, type) {
+    const list = document.getElementById(`${status}-list`);
+    if (!list) return;
+
+    const card = document.createElement('div');
+    card.className = 'card hoverable';
+    card.id = id;
+    card.draggable = true;
+    card.innerHTML = `
+        <div class="card-actions">
+            <button class="action-btn" onclick="deleteTask('${id}')"><span class="material-icons-round" style="font-size:14px;color:#ef4444">delete</span></button>
+        </div>
+        <div class="card-text">${text}</div>
+        ${url ? `<div class="card-media-box"><div class="card-file-row"><div class="card-file-info"><div class="card-file-name">${name}</div></div><a href="${url}" target="_blank" class="card-download-btn">ABRIR</a></div></div>` : ''}
+    `;
+    list.appendChild(card);
+}
+
+// ── DELETAR ──
+async function deleteTask(id) {
+    if (!confirm("Excluir definitivamente?")) return;
+    const formData = new FormData();
+    formData.append('id', id);
+    await fetch(`${API_URL}/delete-task`, { method: 'POST', body: formData });
+    loadTasks();
+}
+
+// Helpers do seu editor
+function execCmd(cmd, val) { document.execCommand(cmd, false, val); }
+function handleFileSelection(input) {
+    document.getElementById('fileNameDisplay').innerText = input.files[0] ? input.files[0].name : "Sem anexo";
+}
