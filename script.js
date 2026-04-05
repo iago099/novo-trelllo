@@ -1,5 +1,5 @@
 // ATENÇÃO: Substitua pelo IP EXTERNO que aparece no painel do Google Cloud
-const API_URL = "34.168.251.50"; 
+const API_URL = "http://34.168.251.50"; 
 
 function updateStatus(msg) {
     document.getElementById('statusMsg').innerText = "STATUS: > " + msg;
